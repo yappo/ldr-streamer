@@ -276,7 +276,8 @@ try {
 }
 
 function ignore_filter(ignores, data){
-        var re = "("+ignores+")";
+	if (ignores != "") return;
+	var re = "("+ignores+")";
 	if (data.title.match(re) || data.body.match(re) || data.link.match(re)) data.body = "&lt;CENSORD&gt;";
 }
 function highlight(keywords, input){
