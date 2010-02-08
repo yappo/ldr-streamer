@@ -283,7 +283,7 @@ function watch_stream() {
 		var div = document.createElement("div");
 		div.className = "item";
 		ignore_filter(ignores, data);
-		img_filter(data);
+		dom_filter(data);
 		data.body = highlight(keywords, data.body);
 		data.time = new Date(data.id * 1000);
 		div.innerHTML = tmpl.fill(data);
@@ -309,11 +309,19 @@ function ignore_filter(ignores, data){
 	var re = "("+ignores+")";
 	if (data.title.match(re) || data.body.match(re) || data.link.match(re)) data.body = "&lt;CENSORD&gt;";
 }
-function img_filter(data){
-	if ($("#view_img:checked").length) return;
-	var dom = $(data.body);
-	dom.find("img").remove();
-	data.body = dom.html();
+function dom_filter(data){
+	if (!data.body.match(/(:?<.*?>)/)) data.body = "<span>" + data.body + "</span>";
+	try {
+		var dom = $(data.body);
+		if (!$("#view_img:checked").length) dom.find("img").remove();
+		dom.find("iframe").remove()
+		dom.find("frame").remove()
+		dom.find("style").remove()
+		dom.find("script").remove()
+		data.body = dom.html();
+	} catch(e) {
+	}
+	if (!data.body) data.body = "";
 }
 function highlight(keywords, input){
 	if (typeof keywords == "string") keywords = [keywords];
