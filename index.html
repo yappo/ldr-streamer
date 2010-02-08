@@ -25,7 +25,7 @@
 				無視単語: <input id="ignore" value="エロ|グロ|性|素人娘|マッサージ|店舗" type="text" size="5">
 			</div>
 			<button onclick="clear_queue();clear_view()">クリア</button>
-			描画待ち<span id="queue_size">0</span>
+			描画待ち<span id="queue_size">0</span> <span id="status"></span>
 		</div>
 		<div id="content-inner">
 			<div class="viewer">
@@ -143,12 +143,13 @@ tmpl.fill = function(param){
 };
 
 var show_interval = 400;
+var max_queue     = 500;
 var State = {};
 var queue = [];
 
 $(function(){
-	$("#result").mouseover(Control.pause);
-	$("#result").mouseout(Control.resume);
+	$("#result").mouseover(function(){$("#status").text("停止中マウスカーソル移動してちょ");Control.pause()});
+	$("#result").mouseout(function(){$("#status").text("");Control.resume()});
 	$("#interval").val(show_interval).keyup(function(){
 		var interval = $(this).val();
 		if (interval.match(/^[0-9]+$/)) show_interval = interval*1;
@@ -263,6 +264,7 @@ Control.start();
 var last_id = 1;
 
 function watch_stream() {
+	if (queue.length > max_queue) setTimeout(watch_stream, 5000);
 	var ignores = $("#ignore")[0].value;
 	var query = $("#url")[0].value;
 	var query2 = $("#query")[0].value;
