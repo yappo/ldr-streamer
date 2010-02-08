@@ -11,8 +11,8 @@
 <body>
 	<div>original as <a href="http://reader.livedoor.com/beta/streaming.html">livedoor Reader | Streaming API Sample</a></div>
 	<div>
-	  this_url?query=[本文のキーワード]&amp;url=どのURL以下から探すか&amp;ignore=無視ワードリスト<br />
-	  query と ignore は | で区切って複数単語入れると OR になる。
+	  this_url?query=[本文のキーワード]&amp;url=どのURL以下から探すか&amp;ignore=無視ワードリスト&amp;filter=このワードリストに一致すれば表示<br />
+	  query と ignore と filter は | で区切って複数単語入れると OR になる。
 	</div>
 	<div id="container">
 		<div id="content">
@@ -24,6 +24,7 @@
 			        <input id="view_img" type="checkbox">画像を表示する<br />
 				本文: <input id="query" value="perl |ruby|python|jquery|mysql|cpan|q4m" type="text" size="50">
 				無視単語: <input id="ignore" value="エロ|グロ|性|素人娘|マッサージ|店舗|ヌード" type="text" size="5">
+				フィルタ: <input id="filter" value="" type="text" size="5">
 			</div>
 			<button onclick="clear_queue();clear_view()">クリア</button>
 			描画待ち<span id="queue_size">0</span> <span id="status"></span>
@@ -178,6 +179,7 @@ $(function(){
 			switch (key) {
 				case "url" :
 				case "query" :
+				case "filter" :
 				case "ignore" : {
 					$("#"+key).val(val);
 					break;
@@ -280,6 +282,7 @@ var last_id = 1;
 function watch_stream() {
 	if (queue.length > max_queue) setTimeout(watch_stream, 5000);
 	var ignores = $("#ignore")[0].value;
+	var filters = $("#filter")[0].value;
 	var query = $("#url")[0].value;
 	var query2 = $("#query")[0].value;
 	var keywords = query2.split("|");
@@ -295,6 +298,7 @@ function watch_stream() {
 		last_id = data.id;
 		var div = document.createElement("div");
 		div.className = "item";
+		if (!word_filter(filters, data)) return;
 		if (ignores != "") ignore_filter(ignores, data);
 		dom_filter(data);
 		data.body = highlight(keywords, data.body);
@@ -316,9 +320,22 @@ function watch_stream() {
 	s.send();
 }
 
+function word_filter(filters, data){
+	if (filters == "") return true;
+	try {
+		var re = "("+filters+")";
+		if (data.title.match(re) || data.body.match(re) || data.link.match(re)) return true;
+	} catch(e) {
+	}
+	return false;
+}
+
 function ignore_filter(ignores, data){
-	var re = "("+ignores+")";
-	if (data.title.match(re) || data.body.match(re) || data.link.match(re)) data.body = "&lt;CENSORD&gt;";
+	try {
+		var re = "("+ignores+")";
+		if (data.title.match(re) || data.body.match(re) || data.link.match(re)) data.body = "&lt;CENSORD&gt;";
+	} catch(e) {
+	}
 }
 function dom_filter(data){
 	if (!data.body.match(/(:?<.*?>)/)) data.body = "<span>" + data.body + "</span>";
