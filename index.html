@@ -20,7 +20,8 @@
 		<div id="control">
 			<div class="searchbox">
                                 インターバル: <input id="interval" type="text" size="4">
-				URL: <input id="url" value="http" type="text"><br />
+				URL: <input id="url" value="http" type="text">
+			        <input id="view_img" type="checkbox">画像を表示する<br />
 				本文: <input id="query" value="perl |ruby|python|jquery|mysql|cpan|q4m" type="text" size="50">
 				無視単語: <input id="ignore" value="エロ|グロ|性|素人娘|マッサージ|店舗" type="text" size="5">
 			</div>
@@ -282,6 +283,7 @@ function watch_stream() {
 		var div = document.createElement("div");
 		div.className = "item";
 		ignore_filter(ignores, data);
+		img_filter(data);
 		data.body = highlight(keywords, data.body);
 		data.time = new Date(data.id * 1000);
 		div.innerHTML = tmpl.fill(data);
@@ -306,6 +308,12 @@ function ignore_filter(ignores, data){
 	if (ignores == "") return;
 	var re = "("+ignores+")";
 	if (data.title.match(re) || data.body.match(re) || data.link.match(re)) data.body = "&lt;CENSORD&gt;";
+}
+function img_filter(data){
+	if ($("#view_img:checked").length) return;
+	var dom = $(data.body);
+	dom.find("img").remove();
+	data.body = dom.html();
 }
 function highlight(keywords, input){
 	if (typeof keywords == "string") keywords = [keywords];
