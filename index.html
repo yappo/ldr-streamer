@@ -149,9 +149,15 @@ var max_queue     = 500;
 var State = {};
 var queue = [];
 
+var queue_size = $("#queue_size");
+var result     = $("#result");
+
 $(function(){
-	$("#result").mouseover(function(){$("#status").text("停止中マウスカーソル移動してちょ");Control.pause()});
-	$("#result").mouseout(function(){$("#status").text("");Control.resume()});
+	queue_size = $("#queue_size");
+	result     = $("#result");
+
+	result.mouseover(function(){$("#status").text("停止中マウスカーソル移動してちょ");Control.pause()})
+		.mouseout(function(){$("#status").text("");Control.resume()});
 	$("#interval").val(show_interval).keyup(function(){
 		var interval = $(this).val();
 		if (interval.match(/^[0-9]+$/)) show_interval = interval*1;
@@ -187,16 +193,16 @@ $(function(){
 var stopFlag = 0;
 var sweepFlag = 0;
 
+
 var Control = {
 	start: function() {
 		this.next();
 	},
 	next: function() {
-		$("#queue_size").text(queue.length);
+		queue_size.text(queue.length);
 		if (stopFlag || queue.length == 0) {
 			setTimeout(arguments.callee, 300);
 		} else {
-			var result = $("#result");
 			var li = queue.shift();
 			result.prepend(li);
 			Control.sweep();
@@ -259,7 +265,7 @@ function clear_queue() {
 }
 
 function clear_view() {
-	$("#result").html("");
+	result.html("");
 }
 
 Control.start();
