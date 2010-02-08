@@ -300,8 +300,7 @@ function watch_stream() {
 		data.body = highlight(keywords, data.body);
 		data.time = new Date(data.id * 1000);
 		div.innerHTML = tmpl.fill(data);
-		var obj = $(div);
-		queue.push(obj);
+		queue.push($(div));
 	});
 	s.listen('complete', function(status){
 		// console.log("complete");
