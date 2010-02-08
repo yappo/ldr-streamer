@@ -282,7 +282,7 @@ function watch_stream() {
 		last_id = data.id;
 		var div = document.createElement("div");
 		div.className = "item";
-		ignore_filter(ignores, data);
+		if (ignores != "") ignore_filter(ignores, data);
 		dom_filter(data);
 		data.body = highlight(keywords, data.body);
 		data.time = new Date(data.id * 1000);
@@ -305,7 +305,6 @@ function watch_stream() {
 }
 
 function ignore_filter(ignores, data){
-	if (ignores == "") return;
 	var re = "("+ignores+")";
 	if (data.title.match(re) || data.body.match(re) || data.link.match(re)) data.body = "&lt;CENSORD&gt;";
 }
