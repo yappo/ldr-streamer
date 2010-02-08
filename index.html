@@ -20,6 +20,7 @@
 		<div id="control">
 			<div class="searchbox">
                                 インターバル: <input id="interval" type="text" size="4">
+			        <input id="auto_interval" type="checkbox">auto interval / 
 				URL: <input id="url" value="http" type="text">
 			        <input id="view_img" type="checkbox">画像を表示する<br />
 				本文: <input id="query" value="perl |ruby|python|jquery|mysql|cpan|q4m" type="text" size="50">
@@ -152,10 +153,16 @@ var State = {};
 var queue = [];
 var results = [];
 
+var last_queue_size = 0;
+var original_interval = show_interval;
+var watch_queue_interval = 5000;
+
 var queue_size = $("#queue_size");
 var result     = $("#result");
+var interval   = $("#interval");
 
-var view_img_is_checked = false;
+var view_img_is_checked      = false;
+var auto_interval_is_checked = false;
 
 $(function(){
 	queue_size = $("#queue_size");
@@ -163,9 +170,9 @@ $(function(){
 
 	result.mouseover(function(){$("#status").text("停止中マウスカーソル移動してちょ");Control.pause()})
 		.mouseout(function(){$("#status").text("");Control.resume()});
-	$("#interval").val(show_interval).keyup(function(){
-		var interval = $(this).val();
-		if (interval.match(/^[0-9]+$/)) show_interval = interval*1;
+	interval.val(show_interval).keyup(function(){
+		var itval = $(this).val();
+		if (itval.match(/^[0-9]+$/)) show_interval = itval*1;
 	});
 
 	// get query params
@@ -191,14 +198,41 @@ $(function(){
 	$("#view_img").click(function(){
 		view_img_is_checked = ($("#view_img:checked").length) ? true : false;
 	});
+	$("#auto_interval").click(function(){
+		auto_interval_is_checked = ($("#auto_interval:checked").length) ? true : false;
+	}).click();
+	auto_interval_is_checked = true;
 
 	// start watcher
 	try {
 		watch_stream();
+		setTimeout(watch_queue, 5000);
 	} catch(e) {
 		alert(e);
 	}
 });
+
+
+function watch_queue(){
+	var last = last_queue_size;
+	last_queue_size = queue.length;
+	if (auto_interval_is_checked) {
+		if (last_queue_size == 0) {
+			show_interval = original_interval;
+		} else if (last < last_queue_size) {
+			show_interval = watch_queue_interval / ((last_queue_size - last) + (last / 2));
+		} else {
+			show_interval *= 2;
+		}
+		if (show_interval > watch_queue_interval) show_interval = watch_queue_interval;
+	}
+	interval.val(show_interval);
+	setTimeout(arguments.callee, watch_queue_interval);
+}
+
+
+var last_queue_size = 0;
+auto_interval_is_checked
 
 var stopFlag = 0;
 
