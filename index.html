@@ -1,0 +1,295 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> 
+<html xmlns="http://www.w3.org/1999/xhtml"> 
+<head>
+	<title>livedoor Reader | Streaming API Sample</title>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<meta http-equiv="content-script-type" content="text/javascript" />
+	<script type="text/javascript" src="http://www.google.com/jsapi"></script>
+	<script type="text/javascript">google.load('jquery', '1.4.1');</script>
+	<script type="text/javascript" charset="UTF-8" src="mxhr.js"></script>
+</head>
+<body>
+	<div>original as <a href="http://reader.livedoor.com/beta/streaming.html">livedoor Reader | Streaming API Sample</a></div>
+	<div id="container">
+		<div id="content">
+			予告無く停止する場合があります。
+		<div id="control">
+			<div class="searchbox">
+                                インターバル: <input id="interval" type="text" size="4">
+				URL: <input id="query" value="http" type="text"><br />
+				本文: <input id="body_query" value="perl |ruby|python|javascript|mysql|cpan|q4m" type="text" size="50">
+				無視単語: <input id="ignore" value="エロ|グロ|性|素人娘|マッサージ|店舗" type="text" size="5">
+			</div>
+			<button onclick="clear_queue();clear_view()">クリア</button>
+			描画待ち<span id="queue_size">0</span>
+		</div>
+		<div id="content-inner">
+			<div class="viewer">
+				<div id="result"></div>
+			</div>
+		</div>
+		</div>
+	</div>
+<style type="text/css">
+body {
+	font-family: Arial;
+	width : 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+}
+.searchbox {
+	float: right;
+}
+#head {
+	font-size: small;
+	background: #F5F5F5;
+	border-bottom: 1px solid #ccc;
+	padding :3px;
+}
+h1 {
+	margin: 0;
+	padding: 0;
+	font-size: 10px;
+	padding : 3px 10px;
+}
+#control {
+	background: #e8f5fa;
+	font-size: 12px;
+	padding: 4px;
+	height: 50px;
+}
+
+#container {
+	width: 100%;
+	height: 100%;
+}
+
+#content {
+	margin: 0;
+	height: 100%;
+	width: auto;
+}
+#content-inner {
+	margin : 0 10px;
+	height: 100%;
+	overflow: auto;
+}
+h2 {
+	border: 1px solid #000;
+	background: #ccc;
+	margin: 0px;
+	padding : 10px;
+}
+#content .viewer {
+	
+}
+blockquote {
+	margin : 10px;
+}
+div.item_body {
+	font-size: 90%;
+	margin: 10px;
+}
+small.item_footer {
+	font-size: 90%;
+	display: block;
+	color: #888;
+	border-top: 1px dotted #ccc;
+}
+.viewer h3 {
+	font-size: 120%;
+	margin: 0;
+	padding: 0;
+	background: #eee;
+}
+h3 a {
+	text-decoration: none;
+	color: black;
+}
+#result {
+	margin : 0px;
+	padding : 0 3px;
+}
+#result div.item {
+	margin: 5px 0;
+	padding: 5px 5px;
+	border: 1px solid #c5dfe8;
+}
+span.highlight {
+	font-weight:bold;
+	color:black !important;
+	background-color: yellow !important;
+}
+</style>
+
+<script type="text/javascript">
+
+var tmpl = new String(
+	  '<h3><img src="http://ic.edge.jp/url/[[link]]" width="16" height="16"/> <a href="[[link]]">[[title]]</a></h3>[[time]]'
+	+ '<div class="item_body">[[body]]</div>'
+	+ '<small class="item_footer">[[link]] <img src="http://reader.livedoor.com/img/icon/reader.gif">[[subscribers_count]]</small>'
+);
+tmpl.fill = function(param){
+	var str = "" + this;
+	str = str.replace(/\[\[(.*?)\]\]/g, function($0,$1){
+		return param[$1] || "";
+	});
+	return str;
+};
+
+var show_interval = 400;
+var State = {};
+var queue = [];
+
+$(function(){
+	$("#result").mouseover(Control.pause);
+	$("#result").mouseout(Control.resume);
+	$("#interval").val(show_interval).keyup(function(){
+		var interval = $(this).val();
+		if (interval.match(/^[0-9]+$/)) show_interval = interval*1;
+	});
+});
+
+var stopFlag = 0;
+var sweepFlag = 0;
+
+var Control = {
+	start: function() {
+		this.next();
+	},
+	next: function() {
+		$("#queue_size").text(queue.length);
+		if (stopFlag || queue.length == 0) {
+			setTimeout(arguments.callee, 300);
+		} else {
+			var result = $("#result");
+			var li = queue.shift();
+			result.prepend(li);
+			Control.sweep();
+			$(li).slideDown(show_interval, arguments.callee);
+		}
+	},
+	pause: function(){
+		stopFlag = 1;
+	},
+	resume: function(){
+		stopFlag = 0;
+	},
+	sweep: function() {
+		if (sweepFlag == 0) {
+			sweepFlag = $("#result div.item").size() > 10 ? 1 : 0;
+		}
+		if (sweepFlag) {
+			$("#result div.item").eq(10).next().fadeOut(500, function(){
+				$(this).remove();
+			});
+		}
+	}
+};
+
+function stop_effect(cb){
+	var orig_interval = show_interval;
+	show_interval = 100;
+	setTimeout(function(){
+		show_interval = orig_interval;
+		cb();
+	}, 500);
+}
+
+var effect_done = 1;
+
+function slide_all(li, callback) {
+	effect_done = 0;
+	li.eq(li.size()-1).slideDown(show_interval, function(l){
+		var prev = $(this).prev();
+		if (prev.size()) {
+			prev.slideDown(show_interval, arguments.callee)
+		} else {
+			effect_done = 1;
+			callback();
+		}
+	});
+}
+
+function wait_effect_done(callback) {
+	if (effect_done) {
+		callback();
+	} else {
+		var fn = arguments.callee;
+		setTimeout(function(){ fn(callback) }, 100)
+	}
+}
+
+function clear_queue() {
+	queue = [];
+}
+
+function clear_view() {
+	$("#result").html("");
+}
+
+Control.start();
+var last_id = 1;
+
+function watch_stream() {
+	var ignores = $("#ignore")[0].value;
+	var query = $("#query")[0].value;
+	var query2 = $("#body_query")[0].value;
+	var keywords = query2.split("|");
+	var s = new MXHR;
+	var api = 'http://stream.reader.livedoor.com/item?';
+	api += "link=" + (query || "http");
+	api += "&body=" + query2;
+	api += "&since=" + last_id;
+	s.open('GET', api, true);
+	s.listen('text/javascript', function(body) {
+		var data = JSON.parse(body);
+		if (data.timeout) return;
+		last_id = data.id;
+		var div = document.createElement("div");
+		div.className = "item";
+		ignore_filter(ignores, data);
+		data.body = highlight(keywords, data.body);
+		data.time = new Date(data.id * 1000);
+		div.innerHTML = tmpl.fill(data);
+		$(div).hide();
+		queue.push(div);
+	});
+	s.listen('complete', function(status){
+		// console.log("complete");
+		// console.log(status);
+		watch_stream();
+	});
+	
+	s.listen('error', function(status){
+		// console.log("error");
+		// console.log(status);
+		setTimeout(watch_stream, 5000)
+	});
+	s.send();
+}
+try {
+	watch_stream();
+} catch(e) {
+	alert(e);
+}
+
+function ignore_filter(ignores, data){
+        var re = "("+ignores+")";
+	if (data.title.match(re) || data.body.match(re) || data.link.match(re)) data.body = "&lt;CENSORD&gt;";
+}
+function highlight(keywords, input){
+	if (typeof keywords == "string") keywords = [keywords];
+	var nodes = input.split(/(:?<.*?>)/);
+	var text_nodes = nodes.
+		filter(function(s){return s.indexOf("<") != 0}).
+		join("\u0000").
+		replace(new RegExp("("+keywords.join("|")+")", "ig"), '<span class="highlight">$1</span>').
+		split("\u0000");
+	return nodes.map(function(v){
+		return v.indexOf("<") != 0 ? text_nodes.shift() : v;
+	}).join("");
+}
+</script>
+</body></html>
