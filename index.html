@@ -222,7 +222,7 @@ function watch_queue(){
 		} else if (last < last_queue_size) {
 			show_interval = watch_queue_interval / ((last_queue_size - last) + (last / 2));
 		} else {
-			show_interval *= 2;
+			show_interval = watch_queue_interval / last_queue_size * 2;
 		}
 		if (show_interval > watch_queue_interval) show_interval = watch_queue_interval;
 	}
