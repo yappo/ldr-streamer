@@ -272,8 +272,8 @@ function watch_stream() {
 	var keywords = query2.split("|");
 	var s = new MXHR;
 	var api = 'http://stream.reader.livedoor.com/item?';
-	api += "link=" + (query || "http");
-	api += "&body=" + query2;
+	api += "link=" + encodeURIComponent(query || "http");
+	api += "&body=" + encodeURIComponent(query2);
 	api += "&since=" + last_id;
 	s.open('GET', api, true);
 	s.listen('text/javascript', function(body) {
