@@ -276,7 +276,7 @@ try {
 }
 
 function ignore_filter(ignores, data){
-	if (ignores != "") return;
+	if (ignores == "") return;
 	var re = "("+ignores+")";
 	if (data.title.match(re) || data.body.match(re) || data.link.match(re)) data.body = "&lt;CENSORD&gt;";
 }
