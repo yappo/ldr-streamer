@@ -10,14 +10,18 @@
 </head>
 <body>
 	<div>original as <a href="http://reader.livedoor.com/beta/streaming.html">livedoor Reader | Streaming API Sample</a></div>
+	<div>
+	  this_url?query=[本文のキーワード]&amp;url=どのURL以下から探すか&amp;ignore=無視ワードリスト<br />
+	  query と ignore は | で区切って複数単語入れると OR になる。
+	</div>
 	<div id="container">
 		<div id="content">
 			予告無く停止する場合があります。
 		<div id="control">
 			<div class="searchbox">
                                 インターバル: <input id="interval" type="text" size="4">
-				URL: <input id="query" value="http" type="text"><br />
-				本文: <input id="body_query" value="perl |ruby|python|javascript|mysql|cpan|q4m" type="text" size="50">
+				URL: <input id="url" value="http" type="text"><br />
+				本文: <input id="query" value="perl |ruby|python|javascript|mysql|cpan|q4m" type="text" size="50">
 				無視単語: <input id="ignore" value="エロ|グロ|性|素人娘|マッサージ|店舗" type="text" size="5">
 			</div>
 			<button onclick="clear_queue();clear_view()">クリア</button>
@@ -149,6 +153,32 @@ $(function(){
 		var interval = $(this).val();
 		if (interval.match(/^[0-9]+$/)) show_interval = interval*1;
 	});
+
+	// get query params
+	var s = location.href.split("?");
+	if (s[1]) {
+		if (typeof params == "string") alert(params);
+		$.each(s[1].split("&"), function(i, data){
+			var kv = data.split("=");
+			var key = kv[0];
+			var val = decodeURIComponent(kv[1]);
+			switch (key) {
+				case "url" :
+				case "query" :
+				case "ignore" : {
+					$("#"+key).val(val);
+					break;
+				}
+			}
+		});
+	}
+
+	// start watcher
+	try {
+		watch_stream();
+	} catch(e) {
+		alert(e);
+	}
 });
 
 var stopFlag = 0;
@@ -234,8 +264,8 @@ var last_id = 1;
 
 function watch_stream() {
 	var ignores = $("#ignore")[0].value;
-	var query = $("#query")[0].value;
-	var query2 = $("#body_query")[0].value;
+	var query = $("#url")[0].value;
+	var query2 = $("#query")[0].value;
 	var keywords = query2.split("|");
 	var s = new MXHR;
 	var api = 'http://stream.reader.livedoor.com/item?';
@@ -268,11 +298,6 @@ function watch_stream() {
 		setTimeout(watch_stream, 5000)
 	});
 	s.send();
-}
-try {
-	watch_stream();
-} catch(e) {
-	alert(e);
 }
 
 function ignore_filter(ignores, data){
